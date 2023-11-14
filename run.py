@@ -51,7 +51,10 @@ class TwitchLogger:
         """
         #conn = sqlite3.connect(configuration.DATABASE)
         cursor = self.conn.cursor()
-        cursor.execute('INSERT INTO twitch_chat (channel, username, message, timestamp) VALUES (?, ?, ?, ?)', (channel, username, message, datetime.now()))
+        try:
+            cursor.execute('INSERT INTO twitch_chat (channel, username, message, timestamp) VALUES (?, ?, ?, ?)', (channel, username, message, datetime.now()))
+        except:
+            pass
 
 
     def load_channels(self) -> None:
@@ -61,7 +64,7 @@ class TwitchLogger:
         for entry in f:
             self.CHANNEL_LIST.append(entry.replace('\n',''))
         f.close()
-        print("Num of entries: {}".format(len(self.CHANNEL_LIST)))
+        #print("Num of entries: {}".format(len(self.CHANNEL_LIST)))
 
 
     def join_channel(self, channel:str) -> None:
@@ -86,7 +89,7 @@ class TwitchLogger:
         join = join[:-1]
         #join = join + "\r\n"
         join = f"JOIN {join}\r\n".encode('utf-8')
-        print("Send to service: {}".format(join))
+        #print("Send to service: {}".format(join))
         self.Socket.send(join)   
         self.last_join = datetime.now()
 
@@ -114,18 +117,20 @@ class TwitchLogger:
                 continue
             if not ':' in text[1]:
                 continue
-            
-            #print(text)
-            username = text[0][1:text[0].find('!')]
-            #print("username: {}".format(username))
-            channel = text[1][:text[1].find(' ')]
-            #print("channel: {}".format(channel))
-            message = text[1][text[1].find(':')+1:]
-            #print("message: {}".format(message))
-            self.insert_message(channel, username, message)
+            try:
+                #print(text)
+                username = text[0][1:text[0].find('!')]
+                #print("username: {}".format(username))
+                channel = text[1][:text[1].find(' ')]
+                #print("channel: {}".format(channel))
+                message = text[1][text[1].find(':')+1:]
+                #print("message: {}".format(message))
+                self.insert_message(channel, username, message)
+            except:
+                continue
         self.conn.commit()
         self.conn.close()
-        print(datetime.now())
+        #print(datetime.now())
             
 
 
@@ -146,7 +151,7 @@ class TwitchLogger:
                 if len(self.CHANNEL_LIST) > 0:
                     
                     if time_now - self.last_join > timedelta(seconds=11):
-                        print(time_now)
+                        #print(time_now)
                         self.join_channels_batch()
                     #if len(self.CHANNEL_LIST) == 0:
                     #    reconnect = False
@@ -154,6 +159,7 @@ class TwitchLogger:
                 resp = self.Socket.recv(1048576).decode('utf-8')
                 if resp.find('PING :tmi.twitch.tv')>-1:
                     self.Socket.send("PONG :tmi.twitch.tv\n".encode('utf-8'))
+                    #print(f'{datetime.now()} send pong')
                 #if resp.find(':tmi.twitch.tv RECONNECT') and not reconnect:
                 #    reconnect = True
                 #    self.load_channels()
