@@ -23,6 +23,7 @@ class TwitchLogger:
         self.TOKEN = configuration.TOKEN
 
 
+
     def create_database(self):
         """_summary_
         """
@@ -41,6 +42,7 @@ class TwitchLogger:
         conn.close()
 
 
+
     def insert_message(self, channel, username, message):
         """_summary_
 
@@ -49,7 +51,6 @@ class TwitchLogger:
             username (_type_): _description_
             message (_type_): _description_
         """
-        #conn = sqlite3.connect(configuration.DATABASE)
         cursor = self.conn.cursor()
         try:
             cursor.execute('INSERT INTO twitch_chat (channel, username, message, timestamp) VALUES (?, ?, ?, ?)', (channel, username, message, datetime.now()))
@@ -57,23 +58,25 @@ class TwitchLogger:
             pass
 
 
+
     def load_channels(self) -> None:
-        """_summary_
+        """ loads a file with channel names; one channel per line
         """
         f = open(self.CHANNEL_FILE, "r")
         for entry in f:
             self.CHANNEL_LIST.append(entry.replace('\n',''))
         f.close()
-        #print("Num of entries: {}".format(len(self.CHANNEL_LIST)))
+
 
 
     def join_channel(self, channel:str) -> None:
         """ a single channel join
 
         Args:
-            channel (str): _description_
+            channel (str): name of the channel
         """
         self.Socket.send(f"JOIN #{channel}\r\n".encode('utf-8'))   
+
 
 
     def join_channels_batch(self):
@@ -87,11 +90,11 @@ class TwitchLogger:
         for _ in range(0,batch,1):
             join = join + "#{},".format(self.CHANNEL_LIST.pop())
         join = join[:-1]
-        #join = join + "\r\n"
         join = f"JOIN {join}\r\n".encode('utf-8')
-        #print("Send to service: {}".format(join))
+        print(f'{datetime.now()}      Send to service: {join}')
         self.Socket.send(join)   
         self.last_join = datetime.now()
+
 
 
     def process_response(self, resp:str):
@@ -104,6 +107,7 @@ class TwitchLogger:
         messages = resp.splitlines()
         for message in messages:
             if self.NICKNAME in message:
+                print(f'{datetime.now()}    {message}')
                 continue 
             if "PING :tmi.twitch.tv" in message:
                 continue
@@ -117,21 +121,23 @@ class TwitchLogger:
                 continue
             if not ':' in text[1]:
                 continue
+
             try:
-                #print(text)
                 username = text[0][1:text[0].find('!')]
-                #print("username: {}".format(username))
                 channel = text[1][:text[1].find(' ')]
-                #print("channel: {}".format(channel))
                 message = text[1][text[1].find(':')+1:]
-                #print("message: {}".format(message))
                 self.insert_message(channel, username, message)
             except:
                 continue
+
         self.conn.commit()
         self.conn.close()
-        #print(datetime.now())
             
+
+
+    def send_pong(self):
+        self.Socket.send("PONG :tmi.twitch.tv\n".encode('utf-8'))
+        print(f'{datetime.now()}    send pong')
 
 
     def main(self):
@@ -144,32 +150,38 @@ class TwitchLogger:
         self.last_join = datetime.now() - timedelta(seconds=11)
 
         self.load_channels()
-
+        #self.join_channel('')
+        
         try:
             while True:
-                time_now = datetime.now()
+                #time_now = datetime.now()
                 if len(self.CHANNEL_LIST) > 0:
-                    
-                    if time_now - self.last_join > timedelta(seconds=11):
-                        #print(time_now)
+                    if datetime.now() - self.last_join > timedelta(seconds=11):
                         self.join_channels_batch()
-                    #if len(self.CHANNEL_LIST) == 0:
-                    #    reconnect = False
-                
-                resp = self.Socket.recv(1048576).decode('utf-8')
+
+                try:
+                    resp = self.Socket.recv(8388608).decode('utf-8')
+                    self.last_time_recived = datetime.now()
+                except:
+                    self.send_pong()
+                    print(f'{datetime.now()}    ERROR Decode')
+
                 if resp.find('PING :tmi.twitch.tv')>-1:
-                    self.Socket.send("PONG :tmi.twitch.tv\n".encode('utf-8'))
-                    #print(f'{datetime.now()} send pong')
-                #if resp.find(':tmi.twitch.tv RECONNECT') and not reconnect:
-                #    reconnect = True
-                #    self.load_channels()
+                    print(f'{datetime.now()}    RECEIVED PONG')
+                    self.send_pong()
+                    
                 if len(resp) > 0:
-                    #print(time_now)
-                    #print(resp)
+                    print(datetime.now())
                     self.process_response(resp)
 
+                if datetime.now() - self.last_time_recived > timedelta(minutes=11):
+                    self.CHANNEL_LIST = [] 
+                    self.load_channels()
+
         except KeyboardInterrupt:
+            print(f'{datetime.now}      Socket closed')
             self.Socket.close()
+        
             
 
 
