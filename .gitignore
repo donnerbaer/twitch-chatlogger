@@ -1,3 +1,5 @@
 *.ipynb
 *.db
 dev_login_daten.txt
+**/__pycache__
+**/dev
