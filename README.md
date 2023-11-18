@@ -16,3 +16,5 @@ you get your login/oauth here: [Twitch.tv](https://twitchapps.com/tmi/ 'https://
 ## start app
 
 start `run.py`
+
+It can take up to 10 minutes to join the first channels
