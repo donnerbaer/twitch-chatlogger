@@ -1,6 +1,6 @@
 # twitch-chatlogger
 
-this code will not work anymore, because [Twitch.tv](https://twitchapps.com/tmi/ 'https://twitchapps.com/tmi/') does not provide api keys anymore
+this code will not work anymore, because [twitchapps.com](https://twitchapps.com/tmi/ 'https://twitchapps.com/tmi/') does not provide api keys anymore
 
 ## get channels
 
@@ -12,7 +12,7 @@ or write your channel name in to `ChannelList.txt`, one channel per line
 
 you need a twitch.tv account
 
-you get your login/oauth here: [Twitch.tv](https://twitchapps.com/tmi/ 'https://twitchapps.com/tmi/')
+you get your login/oauth here: [twitchapps.com](https://twitchapps.com/tmi/ 'https://twitchapps.com/tmi/')
 
 ## start app
 
