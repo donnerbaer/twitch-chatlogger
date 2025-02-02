@@ -1,5 +1,6 @@
 # twitch-chatlogger
 
+this code will not work anymore, because [Twitch.tv](https://twitchapps.com/tmi/ 'https://twitchapps.com/tmi/') does not provide api keys anymore
 
 ## get channels
 
